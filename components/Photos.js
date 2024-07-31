@@ -1,6 +1,8 @@
 import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { Button, FlatList, Image, StyleSheet, View } from "react-native";
+import { FlatList, Image, StyleSheet, Text } from "react-native";
+import { Button } from "react-native-elements";
+import { globalStyles } from "../styles/theme";
 
 export default function Photos() {
   const [photos, setPhotos] = useState([]);
@@ -8,8 +10,6 @@ export default function Photos() {
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
       quality: 1,
     });
 
@@ -21,11 +21,12 @@ export default function Photos() {
 
   return (
     <>
-      <Button title="Sélectionnez une photo" onPress={pickImage} />
+      <Button title={"Ajouter une photo"} onPress={pickImage} buttonStyle={globalStyles.button} />
       <FlatList
         data={photos}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(_, index) => index.toString()}
         renderItem={({ item }) => <Image source={{ uri: item }} style={styles.photo} />}
+        horizontal={true}
       />
     </>
   );
@@ -33,8 +34,9 @@ export default function Photos() {
 
 const styles = StyleSheet.create({
   photo: {
-    width: 200,
-    height: 200,
+    width: 100,
+    height: 100,
     margin: 10,
+    borderRadius: 8,
   },
 });

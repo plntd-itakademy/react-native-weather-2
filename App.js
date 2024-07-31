@@ -1,105 +1,48 @@
-import React, { useState, useEffect } from "react";
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image, ActivityIndicator, Button, FlatList, Alert } from "react-native";
-import { OPEN_WEATHER_API_KEY } from "@env";
-import * as Location from "expo-location";
-import capitalizeFirstLetter from "./utils";
-import Photos from "./components/Photos";
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import HomeScreen from "./screens/HomeScreen";
+import CitySelectorScreen from "./screens/CitySelectorScreen";
+import FavoritesScreen from "./screens/FavoritesScreen";
+import { colors } from "./styles/theme";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { Provider } from "react-redux";
+import { store } from "./store";
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const [weather, setWeather] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setLoading(false);
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({});
-      fetchWeather(location.coords.latitude, location.coords.longitude);
-    })();
-  }, []);
-
-  const fetchWeather = async (lat, lon) => {
-    fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPEN_WEATHER_API_KEY}`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("data", data);
-
-        if (data?.cod === 401) {
-          Alert.alert("Erreur", "Clé API invalide.");
-          return;
-        }
-
-        setWeather(data);
-      })
-      .catch((error) => {
-        console.error(error);
-      })
-      .finally(() => setLoading(false));
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Chargement en cours...</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      {weather ? (
-        <>
-          <Text style={styles.title}>Météo à {weather.name}</Text>
-          <Text style={styles.temperature}>{weather.main.temp.toLocaleString("fr-FR")} °C</Text>
-          <Text>{capitalizeFirstLetter(weather.weather[0].description)}</Text>
-          <Image
-            style={styles.weatherIcon}
-            source={{
-              uri: `http://openweathermap.org/img/wn/${weather.weather[0].icon}.png`,
-            }}
-          />
+    <Provider store={store}>
+      <NavigationContainer>
+        <Tab.Navigator
+          screenOptions={({ route }) => ({
+            tabBarActiveTintColor: colors.primary,
+            tabBarInactiveTintColor: "grey",
+            tabBarIcon: ({ focused, color, size }) => {
+              let iconName;
 
-          <Photos />
-        </>
-      ) : (
-        <Text>Impossible de récupérer les données météo.</Text>
-      )}
+              switch (route.name) {
+                case "Villes":
+                  iconName = focused ? "list" : "list-outline";
+                  break;
+                case "Favoris":
+                  iconName = focused ? "heart" : "heart-outline";
+                  break;
+                default:
+                  iconName = focused ? "home" : "home-outline";
+                  break;
+              }
 
-      <StatusBar style="auto" />
-    </View>
+              return <Ionicons name={iconName} size={size} color={color} />;
+            },
+          })}
+        >
+          <Tab.Screen name="Accueil" component={HomeScreen} />
+          <Tab.Screen name="Villes" component={CitySelectorScreen} />
+          <Tab.Screen name="Favoris" component={FavoritesScreen} />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </Provider>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingText: {
-    marginTop: 10,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginVertical: 10,
-  },
-  temperature: {
-    fontSize: 24,
-    marginVertical: 10,
-  },
-  weatherIcon: {
-    width: 100,
-    height: 100,
-  },
-});
